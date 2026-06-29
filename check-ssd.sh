@@ -35,8 +35,24 @@ install_smartctl() {
 }
 
 find_drives() {
-    lsblk -dn -o NAME,TYPE,TRAN \
-        | awk '$2=="disk" && $3!="usb" {print "/dev/"$1}'
+
+    lsblk -dn -o NAME,TYPE,TRAN |
+    while read -r name type tran
+    do
+        # Only physical disks
+        [[ "$type" != "disk" ]] && continue
+
+        # Ignore USB drives
+        [[ "$tran" == "usb" ]] && continue
+
+        # Ignore zram devices
+        [[ "$name" == zram* ]] && continue
+
+        # Ignore loop devices
+        [[ "$name" == loop* ]] && continue
+
+        echo "/dev/$name"
+    done
 }
 
 get_attr() {
